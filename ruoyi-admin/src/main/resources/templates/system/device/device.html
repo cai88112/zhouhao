@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+	<th:block th:include="include :: header('设备列表')" />
+	<th:block th:include="include :: layout-latest-css" />
+	<th:block th:include="include :: ztree-css" />
+</head>
+<body class="gray-bg">
+
+	<div class="ui-layout-center">
+		<div class="container-div">
+			<div class="row">
+				<div class="col-sm-12 search-collapse">
+					<form id="user-form" th:object="${sysFactory}">
+						<input id="factoryId" name="factoryId"  type="hidden" th:field="*{id}" />
+						<!--
+						<div class="select-list">
+							<ul>
+								<li>
+									名称：<input type="text" name="name"/>
+								</li>
+								<li class="select-time">
+									<label>创建时间： </label>
+									<input type="text" class="time-input" id="startTime" placeholder="开始时间" name="params[beginTime]"/>
+									<span>-</span>
+									<input type="text" class="time-input" id="endTime" placeholder="结束时间" name="params[endTime]"/>
+								</li>
+								<li>
+									<a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+								    <a class="btn btn-warning btn-rounded btn-sm" onclick="resetPre()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+								</li>
+							</ul>
+						</div>-->
+					</form>
+				</div>
+				
+		        <div class="btn-group-sm" id="toolbar" role="group">
+		        	<a class="btn btn-success" onclick="$.operate.addTab()" shiro:hasPermission="system:user:add">
+		                <i class="fa fa-plus"></i> 新增
+		            </a>
+		        </div>
+		        
+		        <div class="col-sm-12 select-table table-striped">
+				    <table id="bootstrap-table"></table>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<th:block th:include="include :: footer" />
+	<th:block th:include="include :: layout-latest-js" />
+	<th:block th:include="include :: ztree-js" />
+	<script th:inline="javascript">
+		var addFlag = [[${@permission.hasPermi('system:user:add')}]];
+		var editFlag = [[${@permission.hasPermi('system:user:edit')}]];
+		var removeFlag = [[${@permission.hasPermi('system:user:remove')}]];
+		var prefix = ctx + "system/device";
+
+		$(function() {
+		    var panehHidden = false;
+		    if ($(this).width() < 769) {
+		        panehHidden = true;
+		    }
+		    $('body').layout({ initClosed: panehHidden, west__size: 185 });
+	     	// 回到顶部绑定
+	    	if ($.fn.toTop !== undefined) {
+	    		var opt = {
+	    			win:$('.ui-layout-center'),
+	    			doc:$('.ui-layout-center')
+	    		};
+	    		$('#scroll-up').toTop(opt);
+	    	}
+			var factoryId = $("#factoryId").val()
+		    queryUserList(factoryId);
+		});
+
+		function queryUserList(factoryId) {
+		    var options = {
+		        url: prefix + "/list/"+factoryId,
+		        createUrl: prefix + "/add/"+factoryId,
+		        updateUrl: prefix + "/edit/{id}/",
+		        removeUrl: prefix + "/remove",
+				detailUrl: prefix + "/detail/{id}/",
+		        sortName: "createTime",
+		        sortOrder: "desc",
+		        modalName: "设备",
+		        columns: [{
+		            checkbox: true
+		        },
+		        {
+		            field: 'id',
+		            title: '设备ID'
+		        },
+		        {
+		            field: 'name',
+		            title: '设备名称',
+		            sortable: true
+		        },
+					{
+						field: 'alias',
+						title: '设备别名',
+						sortable: true
+					},
+					{
+						field: 'workNum',
+						title: '工作序号',
+						sortable: true
+					},
+					{
+						field: 'passwordAuto',
+						title: '密码自动更新',
+						formatter: function(value, row, index) {
+							var actions = [];
+							if(row.passwordAuto){
+								actions.push("是");
+							}else{
+								actions.push("否");
+							}
+							return actions.join('');
+						}
+					},
+					{
+						field: 'online',
+						title: '是否在线',
+						formatter: function(value, row, index) {
+							var actions = [];
+							if(row.online){
+								actions.push("在线");
+							}else{
+								actions.push("离线");
+							}
+							return actions.join('');
+						}
+					},
+
+		        {
+		            field: 'createTime',
+		            title: '创建时间',
+		            sortable: true
+		        },
+		        {
+		            title: '操作',
+		            align: 'center',
+		            formatter: function(value, row, index) {
+		                	var actions = [];
+			                actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.editTab(\'' + row.id + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+			                actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>删除</a> ');
+						    actions.push('<a class="btn btn-success btn-xs ' + addFlag + '" href="javascript:void(0)" onclick="$.operate.detail(\'' + row.id + '\')"><i class="fa fa-edit"></i>进入设备</a> ');
+						return actions.join('');
+		            }
+		        }]
+		    };
+		    $.table.init(options);
+		}
+
+		function resetPre() {
+			resetDate();
+			$("#user-form")[0].reset();
+			$("#deptId").val("");
+			$("#parentId").val("");
+			$(".curSelectedNode").removeClass("curSelectedNode");
+			$.table.search();
+		}
+		
+		$('#btnExpand').click(function() {
+			$._tree.expandAll(true);
+		    $(this).hide();
+		    $('#btnCollapse').show();
+		});
+		
+		$('#btnCollapse').click(function() {
+			$._tree.expandAll(false);
+		    $(this).hide();
+		    $('#btnExpand').show();
+		});
+		
+		$('#btnRefresh').click(function() {
+			queryDeptTree();
+		});
+		
+
+	</script>
+</body>
+<!-- 导入区域 -->
+
+</html>

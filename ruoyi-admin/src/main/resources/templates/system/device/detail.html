@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+	<th:block th:include="include :: header('设备详情')" />
+	<th:block th:include="include :: select2-css" />
+</head>
+<body>
+    <div class="main-content">
+        <form class="form-horizontal" id="form-user-edit" th:object="${device}">
+            <input name="id"  type="hidden"  th:field="*{id}" />
+            <input name="factoryId"  type="hidden"  th:field="*{factoryId}" />
+            <h4 class="form-header h4">设备详情</h4>
+            <div class="row">
+                <div class="col-sm-offset-5 col-sm-10">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="configDevice()"><i class="fa fa-check"></i>下发配置</button>&nbsp;
+                    <button type="button" class="btn btn-sm btn-primary" onclick="setConfig()"><i class="fa fa-reply-all"></i>配置详细参数 </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">密码是否自动更新：</label>
+                        <div class="col-sm-9">
+                            <label class="radio-box">
+                                <input type="radio" th:checked="${device.passwordAuto == true}" value="1" id="passwordAuto1" name="passwordAuto">是</label>
+                            <label class="radio-box">
+                                <input type="radio"  th:checked="${device.passwordAuto == false}" value="0" id="passwordAuto0" name="passwordAuto">否</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">是否脱机工作：</label>
+                        <div class="col-sm-9">
+                            <label class="radio-box">
+                                <input type="radio"  th:checked="${device.online == true}" value="1" id="online1" name="online">是</label>
+                            <label class="radio-box">
+                                <input type="radio"   th:checked="${device.online == false}" value="0" id="online0" name="online">否</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">勾类型：</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" name=""></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">参数：</label>
+                    <div class="col-sm-9">
+                        <textarea type="text" name="" class="form-control" placeholder="请输入文本" style="width: 551px; height: 186px;"></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+	<th:block th:include="include :: footer" />
+	<th:block th:include="include :: select2-js" />
+	<script type="text/javascript">
+        var prefix = ctx + "system/device";
+
+        
+        function submitHandler() {
+	        if ($.validate.form()) {
+	        	var data = $("#form-user-edit").serializeArray();
+	        	$.operate.saveTab(prefix + "/edit", data);
+	        }
+	    }
+        function configDevice(){
+            var value = $( "input[name='passwordAuto']:checked" ).val();
+            alert(value)
+        }
+
+    </script>
+</body>
+</html>

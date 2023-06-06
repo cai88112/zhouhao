@@ -9,7 +9,7 @@ ruoyi:
   # 实例演示开关
   demoEnabled: true
   # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: D:/ruoyi/uploadPath
+  profile: /Users/maoyiqiu/Downloads/workspace/zhouhao
   # 获取ip地址开关
   addressEnabled: false
 
@@ -72,7 +72,23 @@ spring:
     restart:
       # 热部署开关
       enabled: true
-
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #url: jdbc:mysql://127.0.0.1:3306/ruoyi?serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://123.56.131.221:3306/device?serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    #password: 11111111
+    password: Uebwmima.666
+    jpa:
+      properties:
+        hibernate:
+          hbm2ddl:
+            auto: update
+          dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+          format_sql: true
+          enable_lazy_load_no_trans: true
+      show-sql: true
+      open-in-view: true
 # MyBatis
 mybatis:
     # 搜索指定包别名
@@ -98,7 +114,7 @@ shiro:
     # 首页地址
     indexUrl: /index
     # 验证码开关
-    captchaEnabled: true
+    captchaEnabled: false
     # 验证码类型 math 数组计算 char 字符
     captchaType: math
   cookie:
@@ -140,3 +156,4 @@ xss:
 swagger:
   # 是否开启swagger
   enabled: true
+
