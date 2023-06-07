@@ -122,11 +122,11 @@ public class HelloServerAioHandler implements ServerAioHandler {
 //
 //			if(code.equals("30")) {
 //				String id = hex.substring(8,20);
-//				Tio.bindUser(channelContext,id);
+				Tio.bindUser(channelContext,"123");
 //				System.out.println("--------当前userid:"+channelContext.userid);
-//				HelloPacket resppacket = new HelloPacket();
-//				resppacket.setBody(MsgService.command_30(channelContext.userid));
-//				Tio.send(channelContext, resppacket);
+				HelloPacket resppacket = new HelloPacket();
+				resppacket.setBody(MsgService.command_30(channelContext.userid));
+				Tio.send(channelContext, resppacket);
 //				String state = hex.substring(20,22);
 //				String expireD = hex.substring(22,36);
 //				String inputState = hex.substring(52,60);
