@@ -129,10 +129,12 @@
             dataParam.push({"name":"workNum","value":selectedValue});
             $.post(prefix + "/getWorkInfo", dataParam, function(result) {
                 if(result.msg == "Fail"){
-                    $.modal.alert("未获取到数据,请稍后重试");
+                    $.modal.msgError("未获取到数据,请稍后重试");
                     $("#time").val("")
                     $("#speed").val("")
                     $("#params").val("")
+                    $("#end").val("")
+                    $("#density").val("")
                 }else{
                     //$.modal.alert("设备数据..."+JSON.stringify(result.data));
                     var keyMap = {
