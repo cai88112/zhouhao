@@ -36,5 +36,5 @@ public interface SysDeviceMapper extends JpaRepository<SysDevice,Long>
      */
     public SysDevice findFirstById(Long id);
 
-
+    public SysDevice findFirstByName(String deviceNum);
 }

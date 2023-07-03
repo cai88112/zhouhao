@@ -31,8 +31,22 @@ public class SysDevice extends BaseJPAEntity
     @Column(name = "alias")
     private String alias;
 
+    @Column(name = "pwd")
+    private String pwd;
+
     @Column(name = "heart_time")
     private Date heartTime;
+
+    @Column(name = "pwd_time")
+    private Date pwdTime;
+
+    public Date getPwdTime() {
+        return pwdTime;
+    }
+
+    public void setPwdTime(Date pwdTime) {
+        this.pwdTime = pwdTime;
+    }
 
     @Column(name = "work_num")
     private Integer workNum;
@@ -40,11 +54,30 @@ public class SysDevice extends BaseJPAEntity
     @Column(name = "password_auto")
     private boolean passwordAuto;
 
+    @Column(name = "status")
+    private boolean status;
+
     @Column(name = "factory_id", nullable = false)
     private Long factoryId;
 
     @Column(name = "online", nullable = false)
     private boolean online;
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    public String getPwd() {
+        return pwd;
+    }
+
+    public void setPwd(String pwd) {
+        this.pwd = pwd;
+    }
 
     public Date getHeartTime() {
         return heartTime;

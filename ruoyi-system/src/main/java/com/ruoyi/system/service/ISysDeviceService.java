@@ -36,5 +36,5 @@ public interface ISysDeviceService
     public SysDevice updateDevice(SysDevice device);
 
     public SysDevice findById(Long id);
-
+    public SysDevice findByNum(String deviceNum);
 }

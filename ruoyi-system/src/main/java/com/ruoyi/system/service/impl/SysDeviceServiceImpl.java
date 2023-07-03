@@ -36,4 +36,9 @@ public class SysDeviceServiceImpl implements ISysDeviceService {
     public SysDevice findById(Long id) {
         return deviceMapper.findFirstById(id);
     }
+
+    @Override
+    public SysDevice findByNum(String deviceNum) {
+        return deviceMapper.findFirstByName(deviceNum);
+    }
 }

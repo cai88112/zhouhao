@@ -1008,7 +1008,22 @@ public class StringUtil {
 		Pattern pa = Pattern.compile(patternMac);
 		return pa.matcher(mac).find();
 	}
+	public static String generateRandomPassword() {
+		// 创建一个Random对象
+		Random random = new Random();
 
+		// 使用StringBuilder来构建密码
+		StringBuilder passwordBuilder = new StringBuilder();
+
+		// 生成6位随机数字
+		for (int i = 0; i < 6; i++) {
+			int digit = random.nextInt(10); // 生成一个0到9的随机整数
+			passwordBuilder.append(digit); // 将数字添加到密码中
+		}
+
+		// 返回生成的随机密码
+		return passwordBuilder.toString();
+	}
 	public static void main(String[] args) {
 		System.out.println(System.currentTimeMillis());
 	}

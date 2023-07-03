@@ -1,7 +1,7 @@
 package com.ruoyi.web.controller.websocket;
 
 
-import org.springframework.beans.factory.annotation.Value;
+import com.ruoyi.web.controller.tool.SpringUtil;
 import org.springframework.stereotype.Component;
 import org.tio.server.ServerTioConfig;
 import org.tio.server.TioServer;
@@ -20,10 +20,10 @@ public class HelloServerStarter  {
 	public static ServerAioListener aioListener = new HelloListener();
 
 	//一组连接共用的上下文对象
-	public static ServerTioConfig serverTioConfig = new ServerTioConfig("tio-server",aioHandler,aioListener);
+	public static ServerTioConfig serverTioConfig = null;
 
 	//tioServer对象
-	public static TioServer tioServer = new TioServer(serverTioConfig);
+	public static TioServer tioServer = null;
 
 	//有时候需要绑定ip，不需要则null
 	public static String serverIp = null;
@@ -33,11 +33,18 @@ public class HelloServerStarter  {
 
 	public  static long timeout = 5000;
 
+	private static void populateServerTioConfig() {
+		aioHandler = SpringUtil.getBean(HelloServerAioHandler.class);
+		serverTioConfig  = new ServerTioConfig("tio-server", aioHandler, aioListener);
+		tioServer = new TioServer(serverTioConfig);
+	}
+
 	/**
 	 * 启动程序入口
 	 */
 	@PostConstruct
 	public  void init() throws IOException {
+		populateServerTioConfig();
 		serverTioConfig.setHeartbeatTimeout(timeout);
 		tioServer.start(serverIp, serverPort);
 	}

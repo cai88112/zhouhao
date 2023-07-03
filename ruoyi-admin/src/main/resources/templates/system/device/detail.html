@@ -9,48 +9,77 @@
         <form class="form-horizontal" id="form-user-edit" th:object="${device}">
             <input name="id"  type="hidden"  th:field="*{id}" />
             <input name="factoryId"  type="hidden"  th:field="*{factoryId}" />
-            <h4 class="form-header h4">设备详情</h4>
-            <div class="row">
-                <div class="col-sm-offset-5 col-sm-10">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="configDevice()"><i class="fa fa-check"></i>下发配置</button>&nbsp;
-                    <button type="button" class="btn btn-sm btn-primary" onclick="setConfig()"><i class="fa fa-reply-all"></i>配置详细参数 </button>
-                </div>
-            </div>
+            <h4 class="form-header h4">设备详情-<span th:text=" *{alias}  + '(' + *{name} + ')'"></span></h4>
+
             <div class="col-md-6">
                 <div class="col-md-12">
                     <div class="form-group">
                         <label class="col-sm-3 control-label">密码是否自动更新：</label>
                         <div class="col-sm-9">
                             <label class="radio-box">
-                                <input type="radio" th:checked="${device.passwordAuto == true}" value="1" id="passwordAuto1" name="passwordAuto">是</label>
+                                <input type="radio" th:checked="${device.passwordAuto == true}" value="true" id="passwordAuto1" name="passwordAuto">是</label>
                             <label class="radio-box">
-                                <input type="radio"  th:checked="${device.passwordAuto == false}" value="0" id="passwordAuto0" name="passwordAuto">否</label>
+                                <input type="radio"  th:checked="${device.passwordAuto == false}" value="false" id="passwordAuto0" name="passwordAuto">否</label>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label">是否脱机工作：</label>
                         <div class="col-sm-9">
                             <label class="radio-box">
-                                <input type="radio"  th:checked="${device.online == true}" value="1" id="online1" name="online">是</label>
+                                <input type="radio"  th:checked="${device.online == true}" value="true" id="online1" name="online">是</label>
                             <label class="radio-box">
-                                <input type="radio"   th:checked="${device.online == false}" value="0" id="online0" name="online">否</label>
+                                <input type="radio"   th:checked="${device.online == false}" value="false" id="online0" name="online">否</label>
                         </div>
                     </div>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="configDevice()"><i class="fa fa-reply-all"></i>设置</button>
                 </div>
-
+                <div class="row">
+                    <div class="col-sm-offset-5 col-sm-10">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">勾类型：</label>
                     <div class="col-sm-9">
-                        <select class="form-control" name=""></select>
+                        <select class="form-control" name="mySelect" id="mySelect" onchange="sendPostRequest()">
+                            <option  th:each="i: ${#numbers.sequence(1, 128)}" th:value="${i}" th:text="${i}"></option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">参数：</label>
                     <div class="col-sm-9">
-                        <textarea type="text" name="" class="form-control" placeholder="请输入文本" style="width: 551px; height: 186px;"></textarea>
+                        <textarea type="text" name="params" class="form-control" id="params" placeholder="请输入文本" style="width: 551px; height: 186px;"></textarea>
                     </div>
                 </div>
-
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">打底时间：</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="time" class="form-control"  id="time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">打底速度：</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="speed" class="form-control"  id="speed">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">打底位置：</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="end" class="form-control"  id="end">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">打底密度：</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="density" class="form-control"  id="density">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-offset-5 col-sm-10">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="setParams()"><i class="fa fa-reply-all"></i>配置详细参数 </button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -59,7 +88,10 @@
 	<th:block th:include="include :: select2-js" />
 	<script type="text/javascript">
         var prefix = ctx + "system/device";
-
+        let intervalId;
+        $(function(){
+            sendPostRequest()
+        })
         
         function submitHandler() {
 	        if ($.validate.form()) {
@@ -68,10 +100,113 @@
 	        }
 	    }
         function configDevice(){
-            var value = $( "input[name='passwordAuto']:checked" ).val();
-            alert(value)
+            var pwd = $( "input[name='passwordAuto']:checked" ).val();
+            var online = $( "input[name='online']:checked" ).val();
+            var dataParam = $("#form-user-edit").serializeArray();
+            dataParam.push({ "name": "online", "value": online });
+            dataParam.push({"name":"passwordAuto","value":pwd});
+            $.post(prefix + "/setDevice", dataParam, function(result) {
+                $.modal.msgSuccess("设置成功");
+            })
         }
+        function sendPostRequest() {
+            clearInterval(intervalId);
+            // 获取选择的值
+            let selectElement = document.getElementById("mySelect");
+            let selectedValue = selectElement.value;
+            var dataParam = $("#form-user-edit").serializeArray();
+            dataParam.push({"name":"workNum","value":selectedValue});
+            $.post(prefix + "/sendCommand", dataParam, function(result) {
+                $.modal.msgSuccess("正在获取设备数据...");
+            })
+            intervalId = setInterval(getWorkData, 5000);
+        }
+        function getWorkData() {
+            // 获取选择的值
+            let selectElement = document.getElementById("mySelect");
+            let selectedValue = selectElement.value;
+            var dataParam = $("#form-user-edit").serializeArray();
+            dataParam.push({"name":"workNum","value":selectedValue});
+            $.post(prefix + "/getWorkInfo", dataParam, function(result) {
+                if(result.msg == "Fail"){
+                    $.modal.alert("未获取到数据,请稍后重试");
+                    $("#time").val("")
+                    $("#speed").val("")
+                    $("#params").val("")
+                }else{
+                    //$.modal.alert("设备数据..."+JSON.stringify(result.data));
+                    var keyMap = {
+                        "floor": "层数",
+                        "start": "开始位置",
+                        "speed": "速度",
+                        "end": "结束位置",
+                        "density": "密度"
+                    };
+                    clearInterval(intervalId);
+                    $("#time").val(result.data.time)
+                    $("#speed").val(result.data.speed)
+                    $("#end").val(result.data.end)
+                    $("#density").val(result.data.density)
+                    var translatedData = result.data.list.map(function(obj) {
+                        var translatedObj = {};
+                        for (var key in obj) {
+                            if (keyMap.hasOwnProperty(key)) {
+                                translatedObj[keyMap[key]] = obj[key];
+                            }
+                        }
+                        return translatedObj;
+                    });
+                    var formattedData = translatedData.map(function(obj) {
+                        return JSON.stringify(obj);
+                    });
 
+                    var formattedOutput = formattedData.join('\n');
+                    $("#params").val(formattedOutput)
+                }
+            })
+        }
+        function setParams(){
+            let selectElement = document.getElementById("mySelect");
+            let selectedValue = selectElement.value;
+            var dataParam = $("#form-user-edit").serializeArray();
+            dataParam.push({"name":"workNum","value":selectedValue});
+            var keyMap = {
+                "层数": "floor",
+                "开始位置": "start",
+                "速度": "speed",
+                "结束位置": "end",
+                "密度": "density"
+            };
+            var jsonString = $("#params").val()
+            var lines = jsonString.split('\n');
+            var data = [];
+
+            for (var i = 0; i < lines.length; i++) {
+                if (lines[i].trim() !== '') {
+                    data.push(JSON.parse(lines[i]));
+                }
+            }
+            var translatedData = data.map(function(obj) {
+                var translatedObj = {};
+                for (var key in obj) {
+                    if (keyMap.hasOwnProperty(key)) {
+                        translatedObj[keyMap[key]] = obj[key];
+                    }
+                }
+                return translatedObj;
+            });
+
+            var translatedJsonString = JSON.stringify(translatedData);
+
+            dataParam.push({"name":"realParams","value":translatedJsonString});
+            $.post(prefix + "/setParams", dataParam, function(result) {
+                if(result.msg == "Fail") {
+                    $.modal.alert("请完善参数");
+                }else{
+                    $.modal.msgSuccess("配置成功");
+                }
+            })
+        }
     </script>
 </body>
 </html>

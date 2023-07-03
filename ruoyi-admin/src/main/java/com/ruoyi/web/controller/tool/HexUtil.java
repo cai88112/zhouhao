@@ -1,5 +1,7 @@
 package com.ruoyi.web.controller.tool;
 
+import java.math.BigInteger;
+
 /**
  * @author CAI
  * @desc
@@ -165,15 +167,16 @@ public class HexUtil {
 		System.out.println(rsData("test1"));
 		System.out.println(str2HexStr("test1").length());
 		System.out.println(0x66>>2);
-		System.out.println(hex2Int("001b"));
+		System.out.println(hexStr2Str("0003"));
 		System.out.println(Integer.toBinaryString(Integer.valueOf("01", 16)));
 		System.out.println(int2Hex(3,2).toUpperCase());
 		System.out.println(getValidData("0003","540101"));
 		System.out.println(validData("FA0008302020092112575207"));
 		System.out.println(int2Hex(101,1));
-		System.out.println(int2Hex(0x03,1));
+		System.out.println(int2Hex(111222,6));
 		System.out.println(Integer.parseInt("01"));
 		System.out.println(hexToBiary("00000000"));
+		System.out.println(int2Hex(-3 *10000,4));
 	}
 
 	/**
@@ -189,6 +192,11 @@ public class HexUtil {
 		}
 		return Integer.valueOf(hex, 16);
 	}
+	public static int hexToDecimal(String hex) {
+		BigInteger bi = new BigInteger(hex, 16);
+		return bi.intValue();
+	}
+
 
 	public void test() {
 	}

@@ -1,8 +1,17 @@
 package com.ruoyi.web.controller.websocket;
 
+import com.ruoyi.common.core.domain.entity.DayWork;
+import com.ruoyi.common.core.domain.entity.SysDevice;
+import com.ruoyi.common.core.domain.entity.WorkData;
+import com.ruoyi.system.mapper.SysDeviceWorkDataMapper;
+import com.ruoyi.system.mapper.SysDeviceWorkMapper;
+import com.ruoyi.system.service.ISysDeviceService;
 import com.ruoyi.web.controller.common.HelloPacket;
 import com.ruoyi.web.controller.tool.HexUtil;
 import com.ruoyi.web.controller.tool.MsgService;
+import com.ruoyi.web.controller.tool.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tio.core.ChannelContext;
 import org.tio.core.Tio;
 import org.tio.core.TioConfig;
@@ -10,19 +19,29 @@ import org.tio.core.intf.Packet;
 import org.tio.server.intf.ServerAioHandler;
 
 import java.nio.ByteBuffer;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @author tanyaowu
  */
+@Component
 public class HelloServerAioHandler implements ServerAioHandler {
-//	private DeviceService deviceService = new DeviceService();
+	@Autowired
+	private ISysDeviceService deviceService;
+	@Autowired
+	private SysDeviceWorkMapper workMapper;
+	@Autowired
+	private SysDeviceWorkDataMapper workDataMapper;
+
 	/**
 	 * 解码：把接收到的ByteBuffer，解码成应用可以识别的业务消息包
 	 * 总的消息结构：消息头 + 消息体
 	 * 消息头结构：    4个字节，存储消息体的长度
 	 * 消息体结构：   对象的json串的byte[]
 	 */
-	public HelloPacket decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)  {
+	@Override
+	public HelloPacket decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) {
 		//提醒：buffer的开始位置并不一定是0，应用需要从buffer.position()开始读取数据
 		//收到的数据组不了业务包，则返回null以告诉框架数据不够
 //		byte[]  bytes = new byte[buffer.capacity()];
@@ -66,7 +85,7 @@ public class HelloServerAioHandler implements ServerAioHandler {
 			buffer.get(dst);
 			imPacket.setBody(dst);
 			return imPacket;
-		}catch (Exception e){
+		} catch (Exception e) {
 			return null;
 		}
 	}
@@ -77,6 +96,7 @@ public class HelloServerAioHandler implements ServerAioHandler {
 	 * 消息头结构：    4个字节，存储消息体的长度
 	 * 消息体结构：   对象的json串的byte[]
 	 */
+	@Override
 	public ByteBuffer encode(Packet packet, TioConfig groupContext, ChannelContext channelContext) {
 		HelloPacket helloPacket = (HelloPacket) packet;
 		byte[] body = helloPacket.getBody();
@@ -102,126 +122,97 @@ public class HelloServerAioHandler implements ServerAioHandler {
 		return buffer;
 	}
 
-	
+
 	/**
 	 * 处理消息
 	 */
+	@Override
 	public void handler(Packet packet, ChannelContext channelContext) throws Exception {
 		HelloPacket helloPacket = (HelloPacket) packet;
 		byte[] body = helloPacket.getBody();
 		if (body != null) {
-			String hex= HexUtil.bytesToHexString(body);
-			System.out.println("body:"+hex);
-//			if (!hex.startsWith("FA")) {
-//				return;
-//			}
-//			if (!HexUtil.validData(hex)) {
-//				return;
-//			}
-//			String code = hex.substring(6,8);
-//
-//			if(code.equals("30")) {
-//				String id = hex.substring(8,20);
-				Tio.bindUser(channelContext,"123");
-//				System.out.println("--------当前userid:"+channelContext.userid);
+			String hex = HexUtil.bytesToHexString(body);
+			System.out.println("body:" + hex);
+			if (!hex.startsWith("FA")) {
+				return;
+			}
+			if (!HexUtil.validData(hex)) {
+				return;
+			}
+			String code = hex.substring(6, 8);
+			if (code.equals("30")) {
+				String id = hex.substring(8, 20);
+				Tio.bindUser(channelContext, id);
+				int status = HexUtil.hex2Int(hex.substring(20, 22));//机器状态
+				int workType = HexUtil.hex2Int(hex.substring(22, 24));//勾类型
+				int password = HexUtil.hex2Int(hex.substring(24, 26));//密码是否更新
+				int online = HexUtil.hex2Int(hex.substring(26, 28));//工作模式
 				HelloPacket resppacket = new HelloPacket();
-				resppacket.setBody(MsgService.command_30(channelContext.userid));
+				SysDevice device = deviceService.findByNum(id);
+				String pwd = StringUtil.generateRandomPassword();
+				if (device != null) {
+					device.setStatus(status == 1);
+					device.setWorkNum(workType);
+					device.setPasswordAuto(password == 1);
+					device.setOnline(online == 1);
+					Date currentDate = new Date();
+					Calendar operationCalendar = Calendar.getInstance();
+					operationCalendar.setTime(device.getPwdTime());
+					int operationHour = operationCalendar.get(Calendar.HOUR_OF_DAY);
+					Calendar currentCalendar = Calendar.getInstance();
+					currentCalendar.setTime(currentDate);
+					// 获取当前时间的小时和分钟
+					int currentHour = currentCalendar.get(Calendar.HOUR_OF_DAY);
+					int currentMinute = currentCalendar.get(Calendar.MINUTE);
+
+					boolean isSameDay = currentCalendar.get(Calendar.DAY_OF_YEAR) == operationCalendar.get(Calendar.DAY_OF_YEAR);
+					if (!isSameDay && currentHour >= 0 && currentMinute >= 0) {
+						device.setPwd(pwd);
+						device.setPwdTime(new Date());
+					}else{
+						pwd = device.getPwd();
+					}
+					deviceService.updateDevice(device);
+				}
+				resppacket.setBody(MsgService.command_30(pwd));
 				Tio.send(channelContext, resppacket);
-//				String state = hex.substring(20,22);
-//				String expireD = hex.substring(22,36);
-//				String inputState = hex.substring(52,60);
-////				DeviceService deviceService = new DeviceService();
-////				deviceService.upstate(id,inputState,state,expireD);
-//				//Tio.bindUser(channelContext,id);
-//
-//			}else{
-//				commandDeal(hex,channelContext.userid);
-//			}
+			} else {
+				commandDeal(hex, channelContext.userid);
+			}
 		}
-		return;
 	}
 
-	public void commandDeal(String hex,String clientId){
-		String code = hex.substring(6,8);
-		int result = 0;
-		switch (Integer.parseInt(code)){
-			case 31:
-				result = HexUtil.hex2Int(hex.substring(10,12));
-				if(result == 1){
-					//MsgService.command_31(clientId,HexUtil.hex2Int(hex.substring(8,10)));
-					String channel = HexUtil.hex2Int(hex.substring(8,10))+"";
-					if(channel.length() == 1){
-						channel = "0"+channel;
-					}
-//					new UserService().updateEQstate(channel,clientId);
-				}
-				break;
+	public void commandDeal(String hex, String clientId) {
+		String code = hex.substring(6, 8);
+		SysDevice device = deviceService.findByNum(clientId);
+		switch (Integer.parseInt(code)) {
 			case 32:
-				result = HexUtil.hex2Int(hex.substring(12,14));
-				if(result == 1){//成功
-					//MsgService.command_32(clientId,HexUtil.hex2Int(hex.substring(8,10)),HexUtil.hex2Int(hex.substring(10,12)));
-					String channel = HexUtil.hex2Int(hex.substring(8,10))+"";
-					if(channel.length() == 1){
-						channel = "0"+channel;
-					}
-//					new UserService().updateEQstate(channel,clientId);
+				int workNum = HexUtil.hex2Int(hex.substring(8, 10));
+				WorkData workData = workDataMapper.findFirstByDeviceIdAndWorkNum(device.getId(),workNum);
+				if(workData == null){
+					workData = new WorkData();
 				}
+				workData.setDataHex(hex);
+				workData.setWorkNum(workNum);
+				workData.setDeviceId(device.getId());
+				workDataMapper.save(workData);
 				break;
-			case 33:
-				result = HexUtil.hex2Int(hex.substring(8,10));
-				if(result == 0){
-//					Device device = Aop.get(DeviceService.class).findByNum(clientId);
-//					SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-//					MsgService.command_33(clientId,format.format(device.getExpireD()));
-				}
-				break;
-			case 50:
-				result = HexUtil.hex2Int(hex.substring(8,10));
-				if(result == 0){
-//					Device device = Aop.get(DeviceService.class).findByNum(clientId);
-//					ConfigService.inputConfig(device.getId().intValue());
-				}else{
-//					Device device = deviceService.findByNum(clientId);
-//					ConfigService.outputConfig(device.getId().intValue());
-//					ConfigService.upState(1,device.getId().intValue(),1);
-				}
-				break;
-			case 51:
-				result = HexUtil.hex2Int(hex.substring(8,10));
-				if(result == 0){
-//					Device device = Aop.get(DeviceService.class).findByNum(clientId);
-//					ConfigService.outputConfig(device.getId().intValue());
-				}else{
-//					Device device = deviceService.findByNum(clientId);
-//					ConfigService.scenarioConfig(device.getId().intValue(),"100");
-//					ConfigService.upState(2,device.getId().intValue(),1);
-				}
-				break;
-			case 52:
-				result = HexUtil.hex2Int(hex.substring(10,12));
-				int num = HexUtil.hex2Int(hex.substring(8,10));
-				if(result == 1 && num<110){
-//					Device device = deviceService.findByNum(clientId);
-//					ConfigService.scenarioConfig(device.getId().intValue(),(num+1)+"");
-//					ConfigService.upState(3,device.getId().intValue(),1);
-				}
-				break;
-			case 54:
-				int address = HexUtil.hex2Int(hex.substring(8,10));//地址 TODO 多地址时用
-				int idx = HexUtil.hex2Int(hex.substring(10,12));//次序
-				result = HexUtil.hex2Int(hex.substring(12,14));
-				if(result == 1){
-//					Device device = deviceService.findByNum(clientId);
-//					int rs = deviceService.getRsState(device.getId().intValue());
-					if(idx < 8) {
-//						ConfigService.rssConfig(device.getId().intValue(), idx + 1);
-					}
-//					deviceService.upRsState(device.getId().intValue(), idx + 1);
-				}
+			case 34:
+				String start_date = hex.substring(20, 32);
+				String end_date = hex.substring(32, 44);
+				String type = hex.substring(44, 46);
+				String volume = hex.substring(46, 50);
+				DayWork dayWork = new DayWork();
+				dayWork.setDeviceId(device.getId());
+				dayWork.setWorkType(type);
+				dayWork.setEndDate(end_date);
+				dayWork.setStartDate(start_date);
+				dayWork.setVolume(HexUtil.hex2Int(volume)+"");
+				workMapper.save(dayWork);
+				MsgService.command_34(clientId,start_date);
 				break;
 			default:
 				break;
 		}
 	}
-
 }
